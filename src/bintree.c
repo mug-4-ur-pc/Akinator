@@ -396,7 +396,7 @@ bintree_t bintree_find (const bintree_t head, BINTREE_VALUE_T elem)
 }
 
 
-bool* bintree_get_way (const bintree_t node, size_t* len)
+bintree_direction_t* bintree_get_way (const bintree_t node, size_t* len)
 {
 	assert (node);
 	assert (len);
@@ -408,7 +408,8 @@ bool* bintree_get_way (const bintree_t node, size_t* len)
 		return NULL;
 	}
 
-	bool* way = (bool*) calloc(length, sizeof *way);
+	bintree_direction_t* way = (bintree_direction_t*)
+	                           calloc(length, sizeof *way);
 	if (!way)
 		return NULL;
 
@@ -416,7 +417,8 @@ bool* bintree_get_way (const bintree_t node, size_t* len)
 	bintree_t curr_node = node;
 	for (size_t i = 1; i <= length; ++i)
 	{
-		way[length - i] = curr_node->parent->right == curr_node;
+		way[length - i] = (curr_node->parent->right == curr_node)
+		                  ? BINTREE_RIGHT : BINTREE_LEFT;
 		curr_node = curr_node->parent;
 	}
 
@@ -432,3 +434,73 @@ size_t bintree_get_height (const bintree_t node)
 
 	return height;
 }
+
+
+bintree_t bintree_next (const bintree_t node, bintree_direction_t dir)
+{
+	assert (node);
+	
+	switch (dir)
+	{
+		case BINTREE_STAY:  return node;
+		case BINTREE_LEFT:  return node->left;
+		case BINTREE_RIGHT: return node->right;
+		default:            return NULL;
+	}
+}
+
+
+bintree_t bintree_insert_left (bintree_t* root,
+                               bintree_t where, bintree_t node)
+{
+	assert (where);
+	assert (node);
+
+	bintree_t parent = where->parent;
+	bintree_destroy(node->left);
+	bintree_destroy(node->parent);
+	node->left    = where;
+	node->parent  = parent;
+	where->parent = node;
+	if (!parent)
+	{
+		*root = node;
+		return node;
+	}
+
+	if (parent->left == where)
+		parent->left = node;
+	else
+		parent->right = node;
+
+	return node;
+}
+
+
+bintree_t bintree_insert_right (bintree_t* root,
+                                bintree_t where, bintree_t node)
+{
+	assert (where);
+	assert (node);
+
+	bintree_t parent = where->parent;
+	bintree_destroy(node->right);
+	bintree_destroy(node->parent);
+	node->right   = where;
+	node->parent  = parent;
+	where->parent = node;
+	if (!parent)
+	{
+		*root = node;
+		return node;
+	}
+
+	if (parent->left == where)
+		parent->left = node;
+	else
+		parent->right = node;
+
+	return node;
+}
+
+

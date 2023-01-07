@@ -4,6 +4,7 @@
  */
 
 #include "akinator.h"
+#include "bintree.h"
 #include "utilities.h"
 
 #include <assert.h>
@@ -14,6 +15,80 @@
 
 
 
+
+/*!
+ * @brief Ask user about guessed object and add it.
+ */
+static void ak_ask_to_add
+(
+	bintree_t* tree, /*!< [in,out] Akinator tree.                            */
+	bintree_t  node  /*!< [in]     an object which was given by Akinator.    */
+)
+{
+	ak_print("Ладно. Я проиграл :(");
+	ak_print_in_line("А что же это было? ");
+	char obj_name[AK_MAX_OBJ_LENGTH + 1] = {0};
+	if (!fgets(obj_name, AK_MAX_OBJ_LENGTH, stdin))
+	{
+		ak_print("Не могу прочитать твой ответ. Пора заканчивать.");
+		return;
+	}
+
+	obj_name[strlen(obj_name) - 1] = '\0';
+	ak_print_in_line("Помоги мне узнать, что такое ");
+	ak_print(obj_name);
+	ak_print("Дополни предложение.");
+	ak_print_in_line(obj_name);
+	ak_print_in_line(", в отличие от ");
+	ak_print_in_line(node->value);
+	fputs(", ", stdout);
+	
+	char prop_name[AK_MAX_OBJ_LENGTH] = {0};
+	if (!fgets(prop_name, AK_MAX_OBJ_LENGTH, stdin))
+	{
+		ak_print("Не могу прочитать твой ответ. Пора заканчивать.");
+		return;
+	}
+
+	prop_name[strlen(prop_name) - 1] = '\0';
+	bintree_t prop = bintree_create(prop_name);
+	bintree_add_right(prop, obj_name);
+	bintree_insert_left(tree, node, prop);
+	ak_print("Отлично! Я запомнил.");
+}
+
+/*!
+ * @brief Ask user if given property correct and get next direction.
+ *
+ * @return Direction.
+ */
+static bintree_direction_t ak_get_direction
+(
+	const bintree_t prop /*!< [in] an object.                                 */
+)
+{
+	for (size_t i = 0; i < AK_ATTEMPTS_TO_GET_ANSWER; ++i)
+	{
+		ak_print_in_line("Загаданный обхект ");
+		ak_print_in_line(prop->value);
+		puts("?");
+		int choice = ak_get_choice(NULL, 3, "Да", "Нет", "Выход");
+
+		switch (choice)
+		{
+			case 1:  return BINTREE_RIGHT;
+			case 2:  return BINTREE_LEFT;
+			case 3:  return BINTREE_STAY;
+			default: break;
+		}
+		
+		if (i + 1 < AK_ATTEMPTS_TO_GET_ANSWER)
+			ak_print("Ты ввёл какую-то фигню. Даваф ещё раз.");
+	}
+
+	ak_print("Ну всё! Ты мне надоел. Я заканчиваю.");
+	return BINTREE_STAY;
+}
 
 /*!
  * @brief Print info about object recursively.
@@ -40,13 +115,17 @@ static void ak_define_recursive_print
  */
 static void ak_compare_print_general
 (
-	const bintree_t tree,   /*!< [in] Akinator tree.                         */
-	const bintree_t obj1,   /*!< [in] first object.                          */
-	const bintree_t obj2,   /*!< [in] second object.                         */
-	const bool*     way1,   /*!< [in] way from root to first object.         */
-	size_t          depth1, /*!< [in] depth of first object in tree.         */
-	const bool*     way2,   /*!< [in] way from root to second object.        */
-	size_t          depth2  /*!< [in] depth of second object in tree.        */
+	const bintree_t            tree,   /*!< [in] Akinator tree.              */
+	const bintree_t            obj1,   /*!< [in] first object.               */
+	const bintree_t            obj2,   /*!< [in] second object.              */
+	const bintree_direction_t* way1,   /*!< [in] way from root to
+	                                             first object.               */
+	size_t                     depth1, /*!< [in] depth of first object
+	                                             in tree.                    */
+	const bintree_direction_t* way2,   /*!< [in] way from root to
+	                                             second object.              */
+	size_t                     depth2  /*!< [in] depth of second object
+	                                             in tree.                    */
 )
 {
 	ak_print_in_line(obj1->value);
@@ -67,15 +146,15 @@ static void ak_compare_print_general
 	size_t i = 0;
 	while (true)
 	{
-		if (!way1[i])
-			ak_print_in_line(" не ");
+		if (way1[i] == BINTREE_LEFT)
+			ak_print_in_line("не ");
 		ak_print_in_line(property->value);
 		++i;
 		if (way1[i] != way2[i] || i >= min_depth)
 			break;
 
 		fputs(", ", stdout);
-		property = (way1[i]) ? property->right : property->left;
+		property = bintree_next(property, way1[i]);
 	}
 	puts(".");
 }
@@ -85,21 +164,22 @@ static void ak_compare_print_general
  */
 static void ak_print_props_from
 (
-	const bintree_t prop,  /*!< [in] given property.                         */
-	size_t          index, /*!< [in] number of given property.               */
-	const bool*     way,   /*!< [in] array which contains way to object.     */
-	size_t          depth  /*!< [in] size of way.                            */
+	const bintree_t            prop,  /*!< [in] given property.              */
+	size_t                     index, /*!< [in] number of given property.    */
+	const bintree_direction_t* way,   /*!< [in] array which contains way
+	                                            to object.                   */
+	size_t                     depth  /*!< [in] size of way.                 */
 )
 {
 	bintree_t curr_prop = prop;
 	for (size_t i = index; i < depth; ++i)
 	{
-		if (!way[i])
-			ak_print_in_line(" не ");
+		if (way[i] == BINTREE_LEFT)
+			ak_print_in_line("не ");
 
 		ak_print_in_line(curr_prop->value);
 		fputs((i + 1 < depth) ? ", " : ".\n", stdout);
-		curr_prop = (way[i]) ? curr_prop->right : curr_prop->left;
+		curr_prop = bintree_next(curr_prop, way[i]);
 	}
 }
 
@@ -108,17 +188,21 @@ static void ak_print_props_from
 */
 static void ak_compare_print_different
 (
-	const bintree_t tree,   /*!< [in] Akinator tree.                         */
-   const bool*     way1,   /*!< [in] way from root to first object.         */
-   size_t          depth1, /*!< [in] depth of first object in tree.         */
-   const bool*     way2,   /*!< [in] way from root to second object.        */
-   size_t          depth2  /*!< [in] depth of second object in tree.        */
+	const bintree_t            tree,   /*!< [in] Akinator tree.              */
+	const bintree_direction_t* way1,   /*!< [in] way from root to
+	                                             first object.               */
+	size_t                     depth1, /*!< [in] depth of first object
+	                                             in tree.                    */
+	const bintree_direction_t* way2,   /*!< [in] way from root to
+	                                             second object.              */
+	size_t                     depth2  /*!< [in] depth of second object
+	                                             in tree.                    */
 )
 {
 	size_t    index = 0;
 	bintree_t prop  = tree;
 	while (way1[index] == way2[index])
-		prop = (way1[index++]) ? prop->right : prop->left;
+		prop = bintree_next(prop, way1[index++]);
 
 	ak_print_in_line("Перыый объект, в отличие от второго, ");
 	ak_print_props_from(prop, index, way1, depth1);
@@ -183,10 +267,11 @@ bintree_t ak_get_tree (void)
 
 int ak_get_choice (const char* invitation, size_t n_choices, ...)
 {
-	assert (invitation);
-
-	ak_print(invitation);
-	putchar(':');
+	if (invitation)
+	{
+		ak_print(invitation);
+		putchar(':');
+	}
 
 	va_list va;
 	va_start(va, n_choices);
@@ -255,9 +340,9 @@ bintree_t ak_get_object (const bintree_t tree)
 {
 	assert (tree);
 
-	char str[MAX_OBJ_LENGTH + 1] = {0};
+	char str[AK_MAX_OBJ_LENGTH + 1] = {0};
 	ak_print_in_line("Введи имя объекта: ");
-	if (!fgets(str, MAX_OBJ_LENGTH, stdin))
+	if (!fgets(str, AK_MAX_OBJ_LENGTH, stdin))
 	{
 		ak_print("Не могу прочитать имя объекта.");
 		return NULL;
@@ -312,8 +397,8 @@ void ak_compare (const bintree_t tree,
 	size_t depth1 = 0;
 	size_t depth2 = 0;
 
-	bool* way1 = bintree_get_way(obj1, &depth1);
-	bool* way2 = bintree_get_way(obj2, &depth2);
+	bintree_direction_t* way1 = bintree_get_way(obj1, &depth1);
+	bintree_direction_t* way2 = bintree_get_way(obj2, &depth2);
 
 	if (!way1 || !way2)
 	{
@@ -332,12 +417,31 @@ void ak_compare (const bintree_t tree,
 }
 
 
-bool ak_guess (bintree_t tree)
+bool ak_guess (bintree_t* tree)
 {
 	assert (tree);
 
-	//TODO
-	return true;
+	putchar('\n');
+	bintree_t           node = *tree;
+	bintree_direction_t dir  = BINTREE_STAY;
+	while (true)
+	{
+		if (!node->left)
+		{
+			bintree_direction_t guessed = ak_get_direction(node);
+			if (guessed == BINTREE_LEFT)
+				ak_ask_to_add(tree, node);
+			else if (guessed == BINTREE_RIGHT)
+				ak_print("Я сразу знал, что я выиграю))");
+
+			return guessed == BINTREE_RIGHT;
+		}
+
+		if ((dir = ak_get_direction(node)) == BINTREE_STAY)
+			return false;
+
+		node = bintree_next(node, dir);
+	}
 }
 
 
@@ -345,5 +449,12 @@ void ak_save_tree (const bintree_t tree)
 {
 	assert (tree);
 
-	//TODO
+	ak_print_in_line("Введи имя файла, куда сохранится база: ");
+	char fname[PATH_MAX] = {0};
+	fgets(fname, PATH_MAX - 1, stdin);
+	fname[strlen(fname) - 1] = '\0';
+
+	FILE* fp = fopen(fname, "w");
+	bintree_print(tree, fp);
+	fclose(fp);
 }

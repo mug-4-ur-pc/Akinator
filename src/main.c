@@ -29,7 +29,7 @@ int main (void)
 				break;
 
 			case AK_MODE_GUESSING:
-				ak_guess(tree);
+				ak_guess(&tree);
 				break;
 
 			case AK_MODE_SAVE:

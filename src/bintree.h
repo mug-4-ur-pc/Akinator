@@ -16,6 +16,17 @@
 
 
 /*!
+ * @brief Direction of path in binary tree.
+ */
+typedef enum
+{
+	BINTREE_STAY  = 0,
+	BINTREE_LEFT  = 1,
+	BINTREE_RIGHT = 2,
+}
+bintree_direction_t;
+
+/*!
  * @brief Node of a binary tree.
  */
 typedef struct bintree_node
@@ -186,13 +197,11 @@ bintree_t bintree_find
 /*!
  * @brief Get way to the particular node.
  *
- * In returned array false means that the way goes to left child.
- *
  * @note Don't forget to free returned array.
  *
  * @return array with directions.
  */
-bool* bintree_get_way
+bintree_direction_t* bintree_get_way
 (
 	const bintree_t node, /*!< [in]  binary tree node.                       */
 	size_t*         len   /*!< [out] variable in which length of the way will
@@ -208,6 +217,40 @@ bool* bintree_get_way
 size_t bintree_get_height
 (
 	const bintree_t node /*!< [in] given node.                               */
+);
+/*!
+ * @brief Get next node by direction from binary tree.
+ *
+ * @return Next node.
+ */
+bintree_t bintree_next
+(
+	const bintree_t     node, /*!< [in] binary tree.                         */
+	bintree_direction_t dir   /*!< [in] direction.                           */
+);
+
+/*!
+ * @brief Insert node and make subtree where it was inserted left child.
+ *
+ * @return Inserted node.
+ */
+bintree_t bintree_insert_left
+(
+	bintree_t* root,  /*!< [in,out] root of the binary tree.                 */
+	bintree_t  where, /*!< [in,out] place where node will be inserted.       */
+	bintree_t  node   /*!< [in,out] inserted node.                           */
+);
+
+/*!
+ * @brief Insert node and make subtree where it was inserted right child.
+ *
+ * @return Inserted node.
+ */
+bintree_t bintree_insert_right
+(
+	bintree_t* root,  /*!< [in,out] root of the binary tree.                 */
+	bintree_t  where, /*!< [in,out] place where node will be inserted.       */
+	bintree_t  node   /*!< [in,out] inserted node.                           */
 );
 
 

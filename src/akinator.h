@@ -19,7 +19,7 @@
 /*!
  * @brief Max length of given object.
  */
-#define MAX_OBJ_LENGTH ((size_t) 1024)
+#define AK_MAX_OBJ_LENGTH ((size_t) 1024)
 
 /*!
  * @brief List of Akinator modes.
@@ -87,7 +87,7 @@ void ak_compare
  */
 bool ak_guess
 (
-	bintree_t tree /*!< [in,out] Akinator tree.                              */
+	bintree_t* tree /*!< [in,out] Akinator tree.                             */
 );
 
 /*!
@@ -116,6 +116,8 @@ void ak_print_in_line
 
 /*!
  * @brief Get a choice from user.
+ *
+ * If invitation is equal to NULL it will not be printed.
  *
  * @return Given choice.
  */
