@@ -67,6 +67,6 @@ void clear_buffer (FILE* stream)
 {
 	assert (stream);
 
-	while (getchar() != '\n')
+	while (getc(stream) != '\n')
 		continue;
 }

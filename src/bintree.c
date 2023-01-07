@@ -401,15 +401,15 @@ bintree_direction_t* bintree_get_way (const bintree_t node, size_t* len)
 	assert (node);
 	assert (len);
 
-	size_t length = bintree_get_height(node) - 1;
-	if (!length)
+	size_t length = bintree_get_height(node);
+	if (length == 1)
 	{
 		*len = 0;
 		return NULL;
 	}
 
 	bintree_direction_t* way = (bintree_direction_t*)
-	                           calloc(length, sizeof *way);
+	                           calloc(length--, sizeof *way);
 	if (!way)
 		return NULL;
 
