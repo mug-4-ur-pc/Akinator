@@ -41,7 +41,7 @@ static void ak_ask_to_add
 	ak_print_in_line(obj_name);
 	ak_print_in_line(", в отличие от ");
 	ak_print_in_line(node->value);
-	fputs(", ", stdout);
+	fputs(", не", stdout);
 	
 	char prop_name[AK_MAX_OBJ_LENGTH] = {0};
 	if (!fgets(prop_name, AK_MAX_OBJ_LENGTH, stdin))
@@ -52,8 +52,8 @@ static void ak_ask_to_add
 
 	prop_name[strlen(prop_name) - 1] = '\0';
 	bintree_t prop = bintree_create(prop_name);
-	bintree_add_right(prop, obj_name);
-	bintree_insert_left(tree, node, prop);
+	bintree_add_left(prop, obj_name);
+	bintree_insert_right(tree, node, prop);
 	ak_print("Отлично! Я запомнил.");
 }
 
@@ -105,7 +105,7 @@ static void ak_define_recursive_print
 	ak_define_recursive_print(prop->parent, false);
 
 	if (prop->parent->left == prop)
-		ak_print_in_line("не ");
+		ak_print_in_line("не");
 	ak_print_in_line(prop->parent->value);
 	fputs((last) ? ".\n" : ", ", stdout);
 }
@@ -147,7 +147,7 @@ static void ak_compare_print_general
 	while (true)
 	{
 		if (way1[i] == BINTREE_LEFT)
-			ak_print_in_line("не ");
+			ak_print_in_line("не");
 		ak_print_in_line(property->value);
 		++i;
 		if (way1[i] != way2[i] || i >= min_depth)
@@ -175,7 +175,7 @@ static void ak_print_props_from
 	for (size_t i = index; i < depth; ++i)
 	{
 		if (way[i] == BINTREE_LEFT)
-			ak_print_in_line("не ");
+			ak_print_in_line("не");
 
 		ak_print_in_line(curr_prop->value);
 		fputs((i + 1 < depth) ? ", " : ".\n", stdout);
