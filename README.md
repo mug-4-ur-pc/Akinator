@@ -1,0 +1,3 @@
+# Akinator
+
+I write README later...
