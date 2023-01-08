@@ -1,10 +1,12 @@
 CC=gcc
-CFLAGS=-Wall -Wextra -pedantic -std=c11 -O2 -DNDEBUG
-SOURCES=utilities.c bintree.c akinator.c main.c
+CXX=g++
+CXXFLAGS=-Wall -Wextra -pedantic -std=c++11 -ggdb -DNDEBUG
+LIBS=-lFestival -lestbase -lestools -leststring -lncurses -lasound -fopenmp
+SOURCES=utilities.c bintree.c akinator.cpp main.c
 EXECUTABLE=akinator
 
 all:
-	$(CC) $(CFLAGS) $(SOURCES) -o $(EXECUTABLE)
+	$(CXX) $(CXXFLAGS) $(LIBS) $(SOURCES) -o $(EXECUTABLE)
 
 .PHONY: clean
 clean:

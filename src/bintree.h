@@ -50,7 +50,7 @@ typedef struct bintree_node
  */
 bintree_t bintree_create
 (
-	BINTREE_VALUE_T val
+	const BINTREE_VALUE_T val /*!< [in] value of initial node.               */
 );
 
 /*!

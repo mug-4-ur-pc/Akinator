@@ -28,7 +28,7 @@ char* read_string (FILE* input, size_t* size)
 	const size_t CHUNK_SIZE = 10000;
 	size_t len      = 0;
 	size_t was_read = 0;
-	char* str = calloc(CHUNK_SIZE, sizeof *str);
+	char* str = (char*) calloc(CHUNK_SIZE, sizeof *str);
 	if (!str)
 	{
 		*size = 0;

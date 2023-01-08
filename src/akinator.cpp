@@ -12,6 +12,7 @@
 #include <stdarg.h>
 #include <string.h>
 #include <linux/limits.h>
+#include <festival/festival.h>
 
 
 
@@ -25,7 +26,8 @@ static void ak_ask_to_add
 	bintree_t  node  /*!< [in]     an object which was given by Akinator.    */
 )
 {
-	ak_print("Ладно. Я проиграл :(");
+	ak_print("Ладно. Я проиграл");
+	puts(" :((");
 	ak_print_in_line("А что же это было? ");
 	char obj_name[AK_MAX_OBJ_LENGTH + 1] = {0};
 	if (!fgets(obj_name, AK_MAX_OBJ_LENGTH, stdin))
@@ -222,12 +224,16 @@ bintree_t ak_get_tree (void)
 	for (size_t i = 0; i < AK_ATTEMPTS_TO_GET_ANSWER; ++i)
 	{
 		int choice = ak_get_choice("Выбери нужный вариант", 2,
-				"Открыть существующую базу", "Создать новую базу");
+				"Создать новую базу", "Открыть существующую базу");
 
 		char fname[PATH_MAX] = {0};
 		switch (choice)
 		{
 			case 1:
+				create_new_tree = true;
+				break;
+
+			case 2:
 				ak_print_in_line("Введи имя файла с базой: ");
 				scanf("%[^\n]", fname);
 				FILE* fp = fopen(fname, "r");
@@ -246,10 +252,6 @@ bintree_t ak_get_tree (void)
 					ak_print("Не могу открыть файл с базой."
 						"Может его и нет вовсе?");
 				}
-				break;
-			
-			case 2:
-				create_new_tree = true;
 				break;
 		}
 
@@ -277,9 +279,7 @@ int ak_get_choice (const char* invitation, size_t n_choices, ...)
 	va_start(va, n_choices);
 	for (size_t i = 1; i <= n_choices; ++i)
 	{
-		char tmp[32] = {0};
-		sprintf(tmp, "\t%zd) ", i);
-		ak_print_in_line(tmp);
+		printf("\t%zd) ", i);
 		ak_print_in_line(va_arg(va, const char*));
 		fputs(";\n", stdout);
 	}
@@ -310,8 +310,20 @@ void ak_print_in_line (const char* msg)
 {
 	assert (msg);
 
-	// TODO: add festival
+	static bool need_init = true;
+	if (need_init)
+	{
+		need_init = false;
+		festival_initialize(1, FESTIVAL_HEAP_SIZE);
+		festival_init_lang("russian");
+	}
+
 	fputs(msg, stdout);
+	fflush(stdout);
+	
+	while (*msg && (ispunct(*msg) || isspace(*msg))) ++msg;
+	if (*msg)
+		festival_say_text(msg);
 }
 
 
@@ -324,8 +336,14 @@ enum ak_mode ak_get_mode (void)
 			"Режим определений", "Режим сравнения", "Угадать объект",
 			"Сохранить базу", "Выйти");
 
-		if (1 <= choice && choice <= 5)
-			return choice;
+		switch (choice)
+		{
+			case 1: return AK_MODE_DEFINITION;
+			case 2: return AK_MODE_COMPIRISON;
+			case 3: return AK_MODE_GUESSING;
+			case 4: return AK_MODE_SAVE;
+			case 5: return AK_MODE_EXIT;
+		}
 
 		if (i != AK_ATTEMPTS_TO_GET_ANSWER - 1)
 			ak_print("Такого режима нет. Попробуй ещё.");
@@ -353,7 +371,7 @@ bintree_t ak_get_object (const bintree_t tree)
 	bintree_t obj = bintree_find(tree, str);
 
 	// Object must be a leaf.
-	return (obj->left) ? NULL : obj;
+	return (obj && obj->left) ? NULL : obj;
 }
 
 
@@ -363,7 +381,8 @@ void ak_define (const bintree_t obj)
 	{
 		ak_print_in_line("Вот что известно про ");
 		ak_print_in_line(obj->value);
-		ak_print_in_line(".\nЭто ");
+		puts(".");
+		ak_print_in_line("Это ");
 		ak_define_recursive_print(obj, true);
 	}
 	else
@@ -394,6 +413,20 @@ void ak_compare (const bintree_t tree,
 		return;
 	}
 	
+	if (!obj1)
+	{
+		ak_print("Про первый объект ничего не известно.");
+		ak_define(obj2);
+		return;
+	}
+
+	if (!obj2)
+	{
+		ak_define(obj1);
+		ak_print("Про второй объект ничего не известно.");
+		return;
+	}
+
 	size_t depth1 = 0;
 	size_t depth2 = 0;
 

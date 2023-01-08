@@ -26,7 +26,7 @@ static bintree_t bintree_deserialize_
 	size_t*     curr_index /*!< [in,out] index of processing character.      */
 )
 {
-	char* curr_ptr = strpbrk(str + *curr_index, "{\"}");
+	const char* curr_ptr = strpbrk(str + *curr_index, "{\"}");
 	if (!curr_ptr || *curr_ptr != '{')
 		return NULL;
 
@@ -42,7 +42,7 @@ static bintree_t bintree_deserialize_
 	if (!curr_ptr)
 		return bintree_destroy(node);
 
-	char* node_end = curr_ptr;
+	char* node_end = (char*) curr_ptr;
 	do
 	{
 		node_end = strchr(node_end + 1, '\"');
@@ -208,7 +208,7 @@ static bintree_t bintree_find_
 
 
 
-bintree_t bintree_create (BINTREE_VALUE_T value)
+bintree_t bintree_create (const BINTREE_VALUE_T value)
 {
 	bintree_t node = (bintree_t) calloc(1, sizeof *node);
 	if (node)
